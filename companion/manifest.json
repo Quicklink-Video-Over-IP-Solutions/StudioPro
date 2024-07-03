@@ -24,7 +24,7 @@
 		"apiVersion": "0.0.0",
 		"entrypoint": "../index.js"
 	},
-	"manufacturer": "StudioPro",
-	"products": ["QuickLink"],
+	"manufacturer": "QuickLink",
+	"products": ["StudioPro"],
 	"keywords": ["Stream"]
 }
