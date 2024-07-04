@@ -1,7 +1,7 @@
 {
-	"id": "ql-studiopro",
-	"name": "ql-studiopro",
-	"shortname": "studiopro",
+	"id": "StudioPro",
+	"name": "StudioPro",
+	"shortname": "StudioPro",
 	"description": "Control StudioPro using the websocket plugin",
 	"version": "1.0.0",
 	"license": "MIT",
