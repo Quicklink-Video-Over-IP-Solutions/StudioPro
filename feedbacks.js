@@ -9,6 +9,8 @@ export function getFeedbacks() {
 	const ColorRed = combineRgb(200, 0, 0)
 	const ColorGreen = combineRgb(0, 200, 0)
 	const ColorOrange = combineRgb(255, 102, 0)
+	const ColorQLGreen = combineRgb(156, 172, 55)
+	const ColorQLRed = combineRgb(226, 87, 76)
 
 	feedbacks['streaming'] = {
 		type: 'boolean',
@@ -863,6 +865,38 @@ export function getFeedbacks() {
 						}
 					}
 				}
+			}
+		},
+	}
+
+	feedbacks['audio_control_type'] = {
+		type: 'advanced',
+		name: 'Audio Control Type',
+		description: 'If audio control type is source selection or audio volume control, change the style of the button',
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Source Index',
+				id: 'source_index',
+				default: 0,
+				choices: [
+					{id: 0, label: "Source 1"},
+					{id: 1, label: "Source 2"},
+					{id: 2, label: "Source 3"},
+					{id: 3, label: "Source 4"},
+				],
+			},
+		],
+		callback: (feedback) => {
+			
+			const sourceVarKeys = ['audio_control_type_1', 'audio_control_type_2', 'audio_control_type_3', 'audio_control_type_4'];
+			const value = this.getVariableValue(sourceVarKeys[feedback.options.source_index])
+			if (value === 2) {
+				return { color: ColorWhite, bgcolor: ColorQLRed }
+			} else if (value === 1) {
+				return { color: ColorWhite, bgcolor: ColorQLGreen }
+			} else {
+				return {}
 			}
 		},
 	}

@@ -14,6 +14,7 @@ class CRE8Instance extends InstanceBase {
 
 	//Companion Internal and Configuration
 	async init(config) {
+		this.log('debug')
 		this.config = config
 		this.updateStatus(InstanceStatus.Connecting)
 
@@ -41,7 +42,7 @@ class CRE8Instance extends InstanceBase {
 				id: 'port',
 				label: 'Server Port',
 				width: 4,
-				default: 4455,
+				default: 4444,
 				regex: Regex.PORT,
 			},
 			{
@@ -179,6 +180,17 @@ class CRE8Instance extends InstanceBase {
 		this.outputList = []
 		this.filterList = []
 		this.audioSourceList = []
+		this.auxAudioList = [
+			{id: "PGM", label: "PGM"},
+			{id: "AUX1", label: "AUX1"},
+			{id: "AUX2", label: "AUX2"},
+			{id: "AUX3", label: "AUX3"},
+			{id: "AUX4", label: "AUX4"},
+			{id: "AUX5", label: "AUX5"},
+			{id: "AUX6", label: "AUX6"},
+			{id: "AUX7", label: "AUX7"},
+			{id: "AUX8", label: "AUX8"}
+		]
 		this.dskTabChoices = []
 		this.dskItemChoices = []
 		//Set Initial States
@@ -230,7 +242,7 @@ class CRE8Instance extends InstanceBase {
 			if (cre8WebSocketVersion) {
 				this.updateStatus(InstanceStatus.Ok)
 				this.stopReconnectionPoll()
-				this.log('info', 'Connected to CRE8')
+				this.log('info', 'Connected to StudioPro')
 
 				//Setup Initial State Objects
 				this.initializeStates()
@@ -416,7 +428,7 @@ class CRE8Instance extends InstanceBase {
 			if (this.sources[data.inputName]) {
 				this.sources[data.inputName].active = data.videoActive
 				this.checkFeedbacks('scene_item_active')
-			}
+			} 
 		})
 		this.cre8.on('InputShowStateChanged', (data) => {
 			if (this.sources[data.inputName]) {
@@ -1445,6 +1457,83 @@ class CRE8Instance extends InstanceBase {
 		}
 
 		this.updateActionsFeedbacksVariables();
+	}
+
+	getAuxIdxFromName(auxName) {
+		if (auxName === "PGM") return 0;
+		else if (auxName === "AUX1") return 2;
+		else if (auxName === "AUX2") return 3;
+		else if (auxName === "AUX3") return 4;
+		else if (auxName === "AUX4") return 5;
+		else if (auxName === "AUX5") return 6;
+		else if (auxName === "AUX6") return 7;
+		else if (auxName === "AUX7") return 8;
+		else if (auxName === "AUX8") return 9;
+
+		return -1;
+	}
+
+	audioControlKnob(sourceIdx, direction) {
+		
+		const sourceVarKeys = ['audio_control_source_1', 'audio_control_source_2', 'audio_control_source_3', 'audio_control_source_4'];
+		const controlTypeVarKeys = ['audio_control_type_1', 'audio_control_type_2', 'audio_control_type_3', 'audio_control_type_4'];
+
+		const controlTypeKey = this.getVariableValue(controlTypeVarKeys[sourceIdx]);
+		const key = sourceVarKeys[sourceIdx];
+
+		const audioSourceList = this.audioSourceList.concat(this.auxAudioList);
+
+		if (controlTypeKey === 1) { // Source selection
+			let value = this.getVariableValue(key);
+			if (!value) value = "";
+			if (!audioSourceList || audioSourceList.length === 0) return;
+			
+			let valueIndex = -1;
+			for (let i = 0; i < audioSourceList.length; i ++) {
+				if (value === audioSourceList[i].id) valueIndex = i;
+			}
+			if (valueIndex === undefined || valueIndex === null || valueIndex < 0) {
+				valueIndex = 0;
+			}else{
+				valueIndex = valueIndex + 1 * direction;
+				if (valueIndex < 0) valueIndex = audioSourceList.length - 1;
+				if (valueIndex >= audioSourceList.length) valueIndex = 0;
+			}
+
+			const newValue = audioSourceList[valueIndex] ? audioSourceList[valueIndex].id : "";
+			this.setVariableValues({[key]: newValue});
+
+		}else if (controlTypeKey === 2) { // audio volume control
+			const sourceName = this.getVariableValue(key);
+			
+			if (sourceName.indexOf("AUX") >= 0 || sourceName === "PGM"){
+				const trackIdx = this.getAuxIdxFromName(sourceName);
+				this.sendRequest('CallVendorRequest',  {vendorName: "cre8-app-main-controls", 
+					requestType: 'set_track_volume_byinc', requestData: {"track-idx": trackIdx, "increment": direction * 100}}) // 1000 --> 1, 100 --->0.1
+				return;
+			}
+
+			if (sourceName){
+				let newVolume = this.sources[sourceName].inputVolume + 0.1 * direction // 5 is increment/decrement of voume
+				if (newVolume > 20) {
+					newVolume = 20
+				} else if (newVolume < -60) {
+					newVolume = -60.1
+				}
+
+				this.sendRequest('SetInputVolume', { inputName: sourceName, inputVolumeDb: newVolume })
+			}
+		}
+	}
+
+	updateAudioControlSourceType(key) {
+		
+		let value = this.getVariableValue(key);
+		value ++;
+		if (value > 2) value = 0;
+
+		this.setVariableValues({[key]: value});
+		this.checkFeedbacks('audio_control_type')
 	}
 }
 runEntrypoint(CRE8Instance, UpgradeScripts)

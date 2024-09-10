@@ -36,6 +36,14 @@ export function getVariables() {
 		name: 'Time remaining for currently playing media source',
 	})
 	variables.push({ variableId: 'replay_buffer_path', name: 'File path of the last replay buffer saved' })
+	variables.push({ variableId: 'audio_control_source_1', name: 'Audio Control Source 1' })
+	variables.push({ variableId: 'audio_control_source_2', name: 'Audio Control Source 2' })
+	variables.push({ variableId: 'audio_control_source_3', name: 'Audio Control Source 3' })
+	variables.push({ variableId: 'audio_control_source_4', name: 'Audio Control Source 4' })
+	variables.push({ variableId: 'audio_control_type_1', name: 'Audio Control Type 1' })
+	variables.push({ variableId: 'audio_control_type_2', name: 'Audio Control Type 2' })
+	variables.push({ variableId: 'audio_control_type_3', name: 'Audio Control Type 3' })
+	variables.push({ variableId: 'audio_control_type_4', name: 'Audio Control Type 4' })
 
 	//Defaults
 	this.setVariableValues({
@@ -46,6 +54,14 @@ export function getVariables() {
 		current_media_time_remaining: '--:--:--',
 		scene_preview: this.states.previewScene ?? 'None',
 		scene_active: this.states.programScene ?? 'None',
+		audio_control_source_1: '',
+		audio_control_source_2: '',
+		audio_control_source_3: '',
+		audio_control_source_4: '',
+		audio_control_type_1: 0,
+		audio_control_type_2: 0,
+		audio_control_type_3: 0,
+		audio_control_type_4: 0,
 	})
 
 	//Source Specific Variables

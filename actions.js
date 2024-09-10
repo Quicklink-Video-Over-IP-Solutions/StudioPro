@@ -1738,5 +1738,60 @@ export function getActions() {
 		},*/
 	}
 
+	actions['audio_control_knob'] = {
+		name: 'Audio Source Control',
+		description: 'Audio knobs will allow for the audio sources and AUX\'s to be cycled through, and to adjust level',
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Source Index',
+				id: 'source_index',
+				default: 0,
+				choices: [
+					{id: 0, label: "Source 1"},
+					{id: 1, label: "Source 2"},
+					{id: 2, label: "Source 3"},
+					{id: 3, label: "Source 4"},
+				],
+			},
+			{
+				type: 'dropdown',
+				label: 'Direction',
+				id: 'select_direction',
+				default: 'left',
+				choices: [
+					{id: "left", label: "Left"},
+					{id: "right", label: "Right"}
+				],
+			},
+		],
+		callback: async (action) => {
+			this.audioControlKnob(action.options.source_index, action.options.select_direction === "right" ? 1 : -1);
+		}
+	}
+
+	actions['audio_control_type_update'] = {
+		name: 'Audio Control Type',
+		description: 'Source selection or Audio volume control',
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Source Index',
+				id: 'source_index',
+				default: 0,
+				choices: [
+					{id: 0, label: "Source 1"},
+					{id: 1, label: "Source 2"},
+					{id: 2, label: "Source 3"},
+					{id: 3, label: "Source 4"},
+				],
+			}
+		],
+		callback: async (action) => {
+			const sourceVarKeys = ['audio_control_type_1', 'audio_control_type_2', 'audio_control_type_3', 'audio_control_type_4'];
+			this.updateAudioControlSourceType(sourceVarKeys[action.options.source_index]);
+		}
+	}
+ 
 	return actions
 }
