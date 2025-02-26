@@ -44,6 +44,14 @@ export function getVariables() {
 	variables.push({ variableId: 'audio_control_type_2', name: 'Audio Control Type 2' })
 	variables.push({ variableId: 'audio_control_type_3', name: 'Audio Control Type 3' })
 	variables.push({ variableId: 'audio_control_type_4', name: 'Audio Control Type 4' })
+	variables.push({ variableId: 'ip_1', name: 'IP 1' })
+	variables.push({ variableId: 'ip_2', name: 'IP 2' })
+	variables.push({ variableId: 'ip_3', name: 'IP 3' })
+	variables.push({ variableId: 'ip_4', name: 'IP 4' })
+	variables.push({ variableId: 'ipSettings', name: 'IP Settings' })
+	variables.push({ variableId: 'ip4', name: 'IP' })
+	variables.push({ variableId: 'gateway', name: 'Gateway' })
+	variables.push({ variableId: 'dns', name: 'DNS' })
 
 	//Defaults
 	this.setVariableValues({
@@ -62,6 +70,15 @@ export function getVariables() {
 		audio_control_type_2: 0,
 		audio_control_type_3: 0,
 		audio_control_type_4: 0,
+		ip_1: '',
+		ip_2: '',
+		ip_3: '',
+		ip_4: '',
+		ipSettings: false,
+		ip4: '',
+		gateway: '',
+		dns: '',
+
 	})
 
 	//Source Specific Variables

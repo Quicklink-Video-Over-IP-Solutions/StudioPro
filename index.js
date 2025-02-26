@@ -7,6 +7,14 @@ import UpgradeScripts from './upgrades.js'
 
 import OBSWebSocket, { EventSubscription } from 'obs-websocket-js'
 
+import ADS1115 from 'ads1115'
+import i2c from 'i2c-bus'
+import  util  from 'util'
+import { exec } from 'child_process';
+const exec1 = util.promisify(exec);
+
+
+
 class CRE8Instance extends InstanceBase {
 	constructor(internal) {
 		super(internal)
@@ -27,6 +35,10 @@ class CRE8Instance extends InstanceBase {
 		} else {
 			this.updateStatus(InstanceStatus.BadConfig, 'Missing WebSocket Server connection info')
 		}
+		
+
+
+
 	}
 
 	getConfigFields() {
@@ -147,6 +159,9 @@ class CRE8Instance extends InstanceBase {
 		this.initFeedbacks()
 		this.initPresets()
 		this.checkFeedbacks()
+		this.runTerminalCmd('IP4.ADDRESS','ip4');
+		this.runTerminalCmd('IP4.GATEWAY','gateway');
+		this.runTerminalCmd('IP4.DNS','dns');
 	}
 
 	initializeStates() {
@@ -196,6 +211,7 @@ class CRE8Instance extends InstanceBase {
 		//Set Initial States
 		this.vendorEvent = {}
 		this.states.sceneCollectionChanging = false
+	
 	}
 
 	resetSceneSourceStates() {
@@ -216,6 +232,43 @@ class CRE8Instance extends InstanceBase {
 		this.imageSourceList = []
 		this.dskTabChoices = []
 		this.dskItemChoices = []
+	}
+
+	async tbar() {
+		i2c.openPromisified(1).then(async (bus) => {
+			const ads1115 = await ADS1115(bus)
+			// ads1115.gain = 1
+			let oldvalue = 0.00;
+			let invert = false;
+
+			setInterval(async () => {
+				let value = await ads1115.measure('0+GND')
+				let conversion = parseFloat(((value * 1)/20500).toFixed(2));
+			
+				if(conversion > 1)
+				{
+					conversion = 1;
+				}
+				if(invert)
+				{
+					conversion = 1 - conversion;
+				}
+
+				 if(conversion != oldvalue)
+				 {
+
+					  oldvalue = conversion;
+					  await this.sendRequest('SetTBarPosition', {  release: true, position: conversion })
+				}
+
+				if(conversion >= 1)
+				{
+					invert = !invert;
+				}
+				
+			}, 50);
+			
+		  })
 	}
 
 	//CRE8 Websocket Connection
@@ -274,6 +327,8 @@ class CRE8Instance extends InstanceBase {
 		} catch (error) {
 			this.processWebsocketError(error)
 		}
+		this.tbar();
+	
 	}
 
 	processWebsocketError(error) {
@@ -1473,17 +1528,39 @@ class CRE8Instance extends InstanceBase {
 		return -1;
 	}
 
+	
+
 	audioControlKnob(sourceIdx, direction) {
+		console.log('The sourceIdx ', sourceIdx, ' direction ', direction);
+		console.log('The ip 1 i ', this.getVariableValue('ip_1'));
 		
 		const sourceVarKeys = ['audio_control_source_1', 'audio_control_source_2', 'audio_control_source_3', 'audio_control_source_4'];
 		const controlTypeVarKeys = ['audio_control_type_1', 'audio_control_type_2', 'audio_control_type_3', 'audio_control_type_4'];
+		const ipVarKeys = ['ip_1', 'ip_2', 'ip_3', 'ip_4'];
 
 		const controlTypeKey = this.getVariableValue(controlTypeVarKeys[sourceIdx]);
 		const key = sourceVarKeys[sourceIdx];
-
+		const ipkey = ipVarKeys[sourceIdx];
+		console.log('The key is ', controlTypeKey );
 		const audioSourceList = this.audioSourceList.concat(this.auxAudioList);
 
-		if (controlTypeKey === 1) { // Source selection
+		if(controlTypeKey === 0)
+		{
+			let currentValue = this.getVariableValue(ipkey);
+			if(currentValue > 255)
+			{
+				currentValue = 255;
+			}
+			else if(currentValue < 1)
+			{
+				currentValue = 1;
+			} 
+
+			this.setVariableValues({[ipkey]: parseInt(currentValue) + direction});
+		
+
+
+		}else if (controlTypeKey === 1) { // Source selection
 			let value = this.getVariableValue(key);
 			if (!value) value = "";
 			if (!audioSourceList || audioSourceList.length === 0) return;
@@ -1505,6 +1582,7 @@ class CRE8Instance extends InstanceBase {
 
 		}else if (controlTypeKey === 2) { // audio volume control
 			const sourceName = this.getVariableValue(key);
+			console.log('The sourcename is ', sourceName);
 			
 			if (sourceName.indexOf("AUX") >= 0 || sourceName === "PGM"){
 				const trackIdx = this.getAuxIdxFromName(sourceName);
@@ -1526,6 +1604,44 @@ class CRE8Instance extends InstanceBase {
 		}
 	}
 
+	async toggleIP(type){
+		console.log('ToggleIP');
+		let settings = this.getVariableValue('ipSettings');
+		console.log('The type  is ', type);
+		let address = this.getVariableValue(type);
+		console.log('the address is ', address);
+		const ipVarKeys = ['ip_1', 'ip_2', 'ip_3', 'ip_4'];
+		settings = !settings;
+		this.setVariableValues({['ipSettings']:settings});
+
+		if(settings)
+		{
+			//const { stdout, stderr } = await exec1('hostname -I');
+			//console.log( 'the stdout is', stdout );
+			let currentIP = address;
+			let IP = currentIP.split('.');
+			for(let i = 0;i<4;i++)
+			{
+				console.log('The ip key is ', ipVarKeys[i] , 'the ip number is ', IP[i])
+				this.setVariableValues({[ ipVarKeys[i]]: parseInt(IP[i])});
+
+			}
+			//console.log( 'the stderr is', stderr );
+		}
+		else{
+			for(let i = 0;i<4;i++)
+			{
+				console.log('Setting ip to emptystring')
+				this.setVariableValues({[ ipVarKeys[i]]: ''});
+
+			}
+
+		}
+
+	
+
+	}
+
 	updateAudioControlSourceType(key) {
 		
 		let value = this.getVariableValue(key);
@@ -1535,5 +1651,58 @@ class CRE8Instance extends InstanceBase {
 		this.setVariableValues({[key]: value});
 		this.checkFeedbacks('audio_control_type')
 	}
+
+	async updateNetworkMethod(){
+		
+		const { stdout, stderr } = await exec1('nmcli con show eth | grep ipv4.method');
+		console.log('The method is ', stdout.split(':')[1].trim());
+
+	}
+	async setStatic(){
+		
+		const { stdout, stderr } = await exec1('nmcli con mod eth ipv4.method manual');
+		
+
+	}
+	async setDynamic(){
+		
+		const { stdout, stderr } = await exec1('nmcli con mod eth ipv4.method auto');
+		
+
+	}
+
+	async updateNetwork(type, ipsetting)
+	{
+		let ip1 = this.getVariableValue('ip_1');
+		let ip2 = this.getVariableValue('ip_2');
+		let ip3 = this.getVariableValue('ip_3');
+		let ip4 = this.getVariableValue('ip_4');
+
+		let setting = ip1 + '.' +ip2+'.'+ip3+'.'+ip4;
+		console.log('the ip to set is ', setting);
+		if(ipsetting == 'ip4')
+		{
+			setting = setting + '/24';
+		}
+		const { stdout, stderr } = await exec1('nmcli con mod eth ' + type + ' ' + setting);
+		console.log('the response is ', stdout);
+	}
+
+	async runTerminalCmd(searchterm, setting){
+		//console.log('in runcmd');
+		const { stdout, stderr } = await exec1('nmcli d show eth0 | grep -i '+ searchterm);
+		let value = stdout.split(':')[1].trim();
+		if(setting == 'ip4')
+		{
+			value = value.split('/')[0];
+		}
+		 
+			this.setVariableValues({[setting]:value});
+		
+		
+
+
+	}
+	
 }
 runEntrypoint(CRE8Instance, UpgradeScripts)

@@ -31,6 +31,77 @@ export function getActions() {
 			this.sendRequest('StartRecord')
 		},
 	}
+
+	actions['toggle_ip'] = {
+		name: 'Toggle Showing IP',
+		options: [],
+		callback: () => {
+			this.toggleIP('ip4');
+		},
+	}
+	actions['set_ip'] = {
+		name: 'Set IP',
+		options: [],
+		callback: () => {
+			this.updateNetwork('ipv4.addresses', 'ip4');
+		},
+	}
+	actions['set_gateway'] = {
+		name: 'Set Gateway',
+		options: [],
+		callback: () => {
+			this.updateNetwork('ipv4.gateway', 'gateway');
+		},
+	}
+
+	actions['set_dns'] = {
+		name: 'Set DNS',
+		options: [],
+		callback: () => {
+			this.updateNetwork('ipv4.dns', 'dns');
+		},
+	}
+
+	actions['set_static'] = {
+		name: 'Set Static Address',
+		options: [],
+		callback: () => {
+			this.setStatic();
+		},
+	}
+
+	actions['set_dynamic'] = {
+		name: 'Set Dynamic Address',
+		options: [],
+		callback: () => {
+			this.setDynamic();
+		},
+	}
+
+	actions['toggle_gateway'] = {
+		name: 'Toggle Showing Gateway',
+		options: [],
+		callback: () => {
+			this.toggleIP('gateway');
+		},
+	}
+
+	actions['check_network_method'] = {
+		name: 'Check Network Method',
+		options: [],
+		callback: () => {
+			this.updateNetworkMethod();
+		},
+	}
+
+	actions['toggle_dns'] = {
+		name: 'Toggle Showing DNS',
+		options: [],
+		callback: () => {
+			this.toggleIP('dns');
+		},
+	}
+
 	actions['stop_recording'] = {
 		name: 'Stop Recording',
 		options: [],
@@ -1766,6 +1837,7 @@ export function getActions() {
 			},
 		],
 		callback: async (action) => {
+			console.log('the direction is ', action.options.select_direction  );
 			this.audioControlKnob(action.options.source_index, action.options.select_direction === "right" ? 1 : -1);
 		}
 	}

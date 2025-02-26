@@ -891,6 +891,7 @@ export function getFeedbacks() {
 			
 			const sourceVarKeys = ['audio_control_type_1', 'audio_control_type_2', 'audio_control_type_3', 'audio_control_type_4'];
 			const value = this.getVariableValue(sourceVarKeys[feedback.options.source_index])
+			console.log('feedback ', feedback);
 			if (value === 2) {
 				return { color: ColorWhite, bgcolor: ColorQLRed }
 			} else if (value === 1) {
