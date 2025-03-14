@@ -168,18 +168,42 @@ export function getFeedbacks() {
 			bgcolor: ColorGreen,
 		},
 		options: [
-			{
-				type: 'dropdown',
-				label: 'Scene',
-				id: 'scene',
-				default: this.sceneListDefault,
-				choices: this.sceneChoices,
-				minChoicesForSearch: 5,
-			},
-		],
-		callback: (feedback) => {
-			return this.states.previewScene === feedback.options.scene
+            {
+                type: 'textinput',
+                useVariables: true,
+                label: 'Which scene? (scene_<number>)',
+                id: 'customSceneName',
+                default: 'scene_',
+                // isVisible: (options) => options.scene === 'customSceneName',
+            },
+        ],
+        callback: async (feedback) => {
+			try {
+				// this.log('debug', `Feedback check - customSceneName: ${JSON.stringify(feedback.options)}. this.states.previewScene: ${this.states.previewScene}`);
+				// const variableValue = this.states.previewScene;
+				const variableValue = this.getVariableValue(feedback.options.customSceneName) || 'None';
+				// const variableValue = await context.parseVariablesInString(feedback.options.customSceneName) || 'None';
+				this.log('debug', `Feedback check - variableValue: ${variableValue}`);
+				return this.states.previewScene === variableValue;
+				
+			} catch (error) {
+				this.log('error', `Error in scenePreview feedback: ${error.message}`);
+				return false;
+			}
 		},
+		// options: [
+		// 	{
+		// 		type: 'dropdown',
+		// 		label: 'Scene',
+		// 		id: 'scene',
+		// 		default: this.sceneListDefault,
+		// 		choices: this.sceneChoices,
+		// 		minChoicesForSearch: 5,
+		// 	},
+		// ],
+		// callback: (feedback) => {
+		// 	return this.states.previewScene === feedback.options.scene
+		// },
 	}
 
 	feedbacks['scene_item_active'] = {
@@ -581,6 +605,7 @@ export function getFeedbacks() {
 			},
 		],
 		callback: (feedback) => {
+			this.log('feedback.options.volume', feedback.options.volume)
 			return this.sources[feedback.options.source]?.inputVolume == feedback.options.volume
 		},
 	}
@@ -902,5 +927,28 @@ export function getFeedbacks() {
 		},
 	}
 
+		// Custom Scene Name changes [the style of the button and] displays the name
+		feedbacks['custom_scene_name'] = {
+			type: 'boolean',  // boolean is better than 'textinput' for feedbacks according to the docs
+			name: 'Custom Scene Name',
+			description: 'If a custom scene name is set, [change the style of the button and] display the name',
+			options: [
+				{
+					type: 'textinput',
+					label: 'Custom Scene Name',
+					id: 'custom_scene_name',
+				},
+			],
+			callback: (feedback) => {
+				if (this.states.custom_scene_name === feedback.options.custom_scene_name) {
+					return {
+						text: this.states.custom_scene_name, 
+					};
+				}
+				return {}; 
+			},
+		}
+
 	return feedbacks
 }
+

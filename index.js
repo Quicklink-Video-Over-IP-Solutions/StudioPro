@@ -7,8 +7,21 @@ import UpgradeScripts from './upgrades.js'
 
 import OBSWebSocket, { EventSubscription } from 'obs-websocket-js'
 
-import ADS1115 from 'ads1115'
-import i2c from 'i2c-bus'
+// import ADS1115 from 'ads1115'
+// import i2c from 'i2c-bus'
+
+// let i2c = null;
+// let ADS1115 = null;
+
+// try {
+//     if (process.platform === 'linux') {
+//         i2c = await import('i2c-bus');
+//         ADS1115 = await import('ads1115');
+//     }
+// } catch (error) {
+//     console.log('I2C modules not available - hardware features disabled');
+// }
+
 import  util  from 'util'
 import { exec } from 'child_process';
 const exec1 = util.promisify(exec);
@@ -139,7 +152,11 @@ class CRE8Instance extends InstanceBase {
 			{ id: 'Preview Scene', label: 'Preview Scene' },
 		].concat(this.sceneChoices)
 		this.sceneChoicesAnyScene = [{ id: 'anyScene', label: '<ANY SCENE>' }].concat(this.sceneChoices)
-		this.sceneChoicesCustomScene = [{ id: 'customSceneName', label: '<CUSTOM SCENE NAME>' }].concat(this.sceneChoices)
+		// this.sceneChoicesCustomScene = [{ id: 'customSceneName', label: '<CUSTOM SCENE NAME>' }].concat(this.sceneChoices)
+		this.sceneChoicesCustomScene = [
+			// { id: 'customSceneName', label: '<CUSTOM SCENE NAME>' },
+			{ id: '$(studio:scene_preview)', label: 'Current Preview Scene (Variable)' }
+		].concat(this.sceneChoices)
 		//Special Choices - Sources
 		this.sourceChoicesWithScenes = this.sourceChoices.concat(this.sceneChoices)
 		this.mediaSourceListCurrentMedia = [{ id: 'currentMedia', label: '<CURRENT MEDIA>' }].concat(this.mediaSourceList)
@@ -159,9 +176,9 @@ class CRE8Instance extends InstanceBase {
 		this.initFeedbacks()
 		this.initPresets()
 		this.checkFeedbacks()
-		this.runTerminalCmd('IP4.ADDRESS','ip4');
-		this.runTerminalCmd('IP4.GATEWAY','gateway');
-		this.runTerminalCmd('IP4.DNS','dns');
+		// this.runTerminalCmd('IP4.ADDRESS','ip4');
+		// this.runTerminalCmd('IP4.GATEWAY','gateway');
+		// this.runTerminalCmd('IP4.DNS','dns');
 	}
 
 	initializeStates() {
@@ -234,42 +251,91 @@ class CRE8Instance extends InstanceBase {
 		this.dskItemChoices = []
 	}
 
-	async tbar() {
-		i2c.openPromisified(1).then(async (bus) => {
-			const ads1115 = await ADS1115(bus)
-			// ads1115.gain = 1
-			let oldvalue = 0.00;
-			let invert = false;
+	// async tbar() {
+    //     // Only run on Linux systems with I2C support
+    //     if (!i2c || process.platform !== 'linux') {
+    //         this.log('warn', 'T-bar functionality requires Linux with I2C support');
+    //         return;
+    //     }
 
-			setInterval(async () => {
-				let value = await ads1115.measure('0+GND')
-				let conversion = parseFloat(((value * 1)/20500).toFixed(2));
-			
-				if(conversion > 1)
-				{
-					conversion = 1;
-				}
-				if(invert)
-				{
-					conversion = 1 - conversion;
-				}
+    //     try {
+    //         i2c.openPromisified(1).then(async (bus) => {
+    //             this.log('info', 'Connected to I2C bus')
+    //             const ads1115 = await ADS1115(bus)
+	// 			// ads1115.gain = 1
+	// 			let oldvalue = 0.00;
+	// 			let invert = false;
 
-				 if(conversion != oldvalue)
-				 {
-
-					  oldvalue = conversion;
-					  await this.sendRequest('SetTBarPosition', {  release: true, position: conversion })
-				}
-
-				if(conversion >= 1)
-				{
-					invert = !invert;
-				}
+	// 			setInterval(async () => {
+	// 				let value = await ads1115.measure('0+GND')
+	// 				let conversion = parseFloat(((value * 1)/20500).toFixed(2));
 				
-			}, 50);
+	// 				if(conversion > 1)
+	// 				{
+	// 					conversion = 1;
+	// 				}
+	// 				if(invert)
+	// 				{
+	// 					conversion = 1 - conversion;
+	// 				}
+
+	// 					if(conversion != oldvalue)
+	// 					{
+
+	// 						oldvalue = conversion;
+	// 						await this.sendRequest('SetTBarPosition', {  release: true, position: conversion })
+	// 				}
+
+	// 				if(conversion >= 1)
+	// 				{
+	// 					invert = !invert;
+	// 				}
+					
+	// 			}, 50);
+    //         }).catch(error => {
+    //             this.log('error', `Failed to open I2C bus: ${error.message}`);
+    //         });
+    //     } catch (error) {
+    //         this.log('error', `T-bar initialization failed: ${error.message}`);
+    //     }
+    // }
+	// async tbar() {
+	// 	i2c.openPromisified(1).then(async (bus) => {
+	// 		this.log('info', 'Connected to I2C bus')
+	// 		const ads1115 = await ADS1115(bus)
+	// 		// ads1115.gain = 1
+	// 		let oldvalue = 0.00;
+	// 		let invert = false;
+
+	// 		setInterval(async () => {
+	// 			let value = await ads1115.measure('0+GND')
+	// 			let conversion = parseFloat(((value * 1)/20500).toFixed(2));
 			
-		  })
-	}
+	// 			if(conversion > 1)
+	// 			{
+	// 				conversion = 1;
+	// 			}
+	// 			if(invert)
+	// 			{
+	// 				conversion = 1 - conversion;
+	// 			}
+
+	// 			 if(conversion != oldvalue)
+	// 			 {
+
+	// 				  oldvalue = conversion;
+	// 				  await this.sendRequest('SetTBarPosition', {  release: true, position: conversion })
+	// 			}
+
+	// 			if(conversion >= 1)
+	// 			{
+	// 				invert = !invert;
+	// 			}
+				
+	// 		}, 50);
+			
+	// 	  })
+	// }
 
 	//CRE8 Websocket Connection
 	async connectCRE8() {
@@ -327,7 +393,7 @@ class CRE8Instance extends InstanceBase {
 		} catch (error) {
 			this.processWebsocketError(error)
 		}
-		this.tbar();
+		// this.tbar();
 	
 	}
 
@@ -384,7 +450,35 @@ class CRE8Instance extends InstanceBase {
 			this.startReconnectionPoll()
 		}
 	}
-
+	fetchCurrentSceneInfo() {
+		this.log('debug', 'Fetching current scene information');
+		
+		// Get the current preview scene
+		this.cre8.sendRequest('GetCurrentPreviewScene').then((response) => {
+			this.log('debug', `Got current preview scene: ${JSON.stringify(response)}`);
+			if (response && response.sceneName) {
+				const currentPreview = response.sceneName;
+				
+				// Update our state if needed
+				if (this.states.previewScene !== currentPreview) {
+					this.log('debug', `Updating preview scene: "${this.states.previewScene}" -> "${currentPreview}"`);
+					this.states.previewScene = currentPreview;
+					this.setVariableValues({ scene_preview: currentPreview });
+					
+					// Force check all feedbacks
+					this.checkFeedbacks();
+					
+					// Log the update
+					this.log('debug', `Updated preview scene variable to "${currentPreview}" and checked feedbacks`);
+				}
+			}
+		}).catch((error) => {
+			this.log('error', `Failed to get current preview scene: ${error.message}`);
+		});
+		
+		// Update scene choices
+		this.updateSceneChoices();
+	}	
 	//CRE8 Websocket Listeners
 	async cre8Listeners() {
 		//General
@@ -443,6 +537,7 @@ class CRE8Instance extends InstanceBase {
 			}
 		})
 		this.cre8.on('SceneNameChanged', (data) => {
+			this.log('debug', `Scene name changed event received: ${JSON.stringify(data)}`);
 			if (this.sceneItems[data.oldSceneName]) {
 				this.sceneItems[data.sceneName] = this.sceneItems[data.oldSceneName]
 				delete this.sceneItems[data.oldSceneName]
@@ -465,9 +560,69 @@ class CRE8Instance extends InstanceBase {
 			this.checkFeedbacks('scene_active')
 			this.checkFeedbacks('scenePreview')
 		})
+
 		this.cre8.on('SceneListChanged', (data) => {
 			this.scenes = data.scenes
 		})
+
+		this.cre8.on('SceneNameChanged', (data) => {
+			this.log('debug', `Scene name changed event received: ${JSON.stringify(data)}`);
+			
+			if (!data.oldSceneName) {
+				this.log('warn', 'SceneNameChanged event missing oldSceneName');
+				return;
+			}
+			const newSceneName = data.newSceneName || data.sceneName;
+			
+			if (!newSceneName) {
+				this.log('warn', 'SceneNameChanged event missing new scene name, fetching current scene info');
+				this.fetchCurrentSceneInfo();
+				return;
+			}
+			for (let i = 0; i < 1000 ; i++) {
+				if (this.getVariableValue(`scene_${i}`) === data.oldSceneName) {
+					this.setVariableValues({ [`scene_${i}`]: newSceneName });
+					break;
+				}
+			}
+			if (this.states.previewScene === data.oldSceneName) {
+				this.log('debug', `Updating preview scene name: "${data.oldSceneName}" -> "${newSceneName}"`);
+				this.states.previewScene = newSceneName;
+				// this.setVariableValues({ scene_preview: newSceneName });
+				// this.setVariableValues({ scene_3: newSceneName });
+				
+				this.checkFeedbacks();
+				
+				this.log('debug', `Updated preview scene variable to "${newSceneName}" and checked feedbacks`);
+			}
+			
+			this.updateSceneChoices();
+		})
+		
+		this.cre8.on('SceneListChanged', (data) => {
+			// this.log('debug', `Scene list changed event received: ${JSON.stringify(data)}`);
+			
+			this.updateSceneChoices();
+			
+			this.fetchCurrentSceneInfo();
+
+			this.cre8.sendRequest('GetCurrentPreviewScene').then(response => {
+				if (response && response.sceneName) {
+					const currentPreview = response.sceneName;
+					
+					if (this.states.previewScene !== currentPreview) {
+						this.log('debug', `Updating preview scene after list change: "${this.states.previewScene}" -> "${currentPreview}"`);
+						this.states.previewScene = currentPreview;
+						this.setVariableValues({ scene_preview: currentPreview });
+						this.checkFeedbacks();
+					}
+				}
+			}).catch(error => {
+				this.log('error', `Failed to get current preview scene: ${error.message}`);
+			});
+		})
+
+
 		//Inputs
 		this.cre8.on('InputCreated', (data) => {})
 		this.cre8.on('InputRemoved', (data) => {
@@ -478,7 +633,10 @@ class CRE8Instance extends InstanceBase {
 			delete this.sources[data.inputName]
 			this.updateActionsFeedbacksVariables()
 		})
-		this.cre8.on('InputNameChanged', () => {})
+		this.cre8.on('InputNameChanged', () => {
+			this.log('debug', `Input Name Changed: ${data}`)
+			this.checkFeedbacks('scenePreview')
+		})		
 		this.cre8.on('InputActiveStateChanged', (data) => {
 			if (this.sources[data.inputName]) {
 				this.sources[data.inputName].active = data.videoActive
@@ -536,6 +694,7 @@ class CRE8Instance extends InstanceBase {
 			this.updateAudioPeak(data)
 		})
 		this.cre8.on('InputSettingsChanged', (data) => {
+			this.log('debug', `Input Settings Changed: ${data}`)
 			let source = data.inputName
 			let settings = data.inputSettings
 
@@ -590,6 +749,7 @@ class CRE8Instance extends InstanceBase {
 		})
 		//Scene Items
 		this.cre8.on('SceneItemCreated', (data) => {
+			this.log('debug', `Scene Item Created: ${data.sceneName} - ${data.sceneItemId}`)
 			if (this.states.sceneCollectionChanging === false) {
 				this.buildSourceList(data.sceneName)
 			}
@@ -678,6 +838,7 @@ class CRE8Instance extends InstanceBase {
 		})
 		//UI
 		this.cre8.on('StudioModeStateChanged', async (data) => {
+			this.log('debug', `Studio Mode state changed: ${data}`)
 			this.states.studioMode = data.studioModeEnabled ? true : false
 			this.checkFeedbacks('studioMode')
 
@@ -824,6 +985,38 @@ class CRE8Instance extends InstanceBase {
 		this.setVariableValues({ profile: this.states.currentProfile })
 		this.updateActionsFeedbacksVariables()
 	}
+
+	// updateSceneChoices() {
+	// 	this.log('debug', 'Updating scene choices');
+	// 	this.cre8.sendRequest('GetSceneList').then((response) => {
+	// 		if (response && response.scenes) {
+	// 			// Create scene choices from the response
+	// 			this.sceneChoices = response.scenes.map(scene => ({
+	// 				id: scene.sceneName,
+	// 				label: scene.sceneName
+	// 			}));
+
+	// 			// Create the custom scene choices with the variable at the top
+	// 			this.sceneChoicesCustomScene = [
+	// 				{ id: '$(studio:scene_preview)', label: 'Current Preview Scene (Variable)' },
+	// 				{ id: 'customSceneName', label: '<CUSTOM SCENE NAME>' },
+	// 				...this.sceneChoices
+	// 			];
+
+	// 			// Set the default value to the variable
+	// 			this.sceneListDefault = '$(studio:scene_preview)';
+
+	// 			// Update action and feedback definitions
+	// 			this.setActionDefinitions(this.getActionDefinitions());
+	// 			this.setFeedbackDefinitions(this.getFeedbackDefinitions());
+
+	// 			this.log('debug', `Updated scene choices with ${this.sceneChoices.length} scenes`);
+	// 			this.log('debug', `Default scene is now: ${this.sceneListDefault}`);
+	// 		}
+	// 	}).catch(error => {
+	// 		this.log('error', `Failed to update scene choices: ${error.message}`);
+	// 	});
+	// }
 
 	async buildSceneCollectionList() {
 		let collections = await this.sendRequest('GetSceneCollectionList')
@@ -1376,6 +1569,7 @@ class CRE8Instance extends InstanceBase {
 	}
 
 	async getSourceAudio(sourceName) {
+		this.log('debug', `Getting audio info for ${sourceName}`)
 		let validName = this.validName(sourceName)
 
 		let batch = [
@@ -1600,6 +1794,7 @@ class CRE8Instance extends InstanceBase {
 				}
 
 				this.sendRequest('SetInputVolume', { inputName: sourceName, inputVolumeDb: newVolume })
+				this.log('debug', `Setting volume of ${sourceName} to ${newVolume}`) // TODO: this is where we get the dB values for the adjust_volume knobs
 			}
 		}
 	}
@@ -1654,19 +1849,19 @@ class CRE8Instance extends InstanceBase {
 
 	async updateNetworkMethod(){
 		
-		const { stdout, stderr } = await exec1('nmcli con show eth | grep ipv4.method');
-		console.log('The method is ', stdout.split(':')[1].trim());
+		// const { stdout, stderr } = await exec1('nmcli con show eth | grep ipv4.method');
+		// console.log('The method is ', stdout.split(':')[1].trim());
 
 	}
 	async setStatic(){
 		
-		const { stdout, stderr } = await exec1('nmcli con mod eth ipv4.method manual');
+		// const { stdout, stderr } = await exec1('nmcli con mod eth ipv4.method manual');
 		
 
 	}
 	async setDynamic(){
 		
-		const { stdout, stderr } = await exec1('nmcli con mod eth ipv4.method auto');
+		// const { stdout, stderr } = await exec1('nmcli con mod eth ipv4.method auto');
 		
 
 	}
@@ -1684,25 +1879,30 @@ class CRE8Instance extends InstanceBase {
 		{
 			setting = setting + '/24';
 		}
-		const { stdout, stderr } = await exec1('nmcli con mod eth ' + type + ' ' + setting);
-		console.log('the response is ', stdout);
+		// const { stdout, stderr } = await exec1('nmcli con mod eth ' + type + ' ' + setting);
+		// console.log('the response is ', stdout);
 	}
 
 	async runTerminalCmd(searchterm, setting){
 		//console.log('in runcmd');
-		const { stdout, stderr } = await exec1('nmcli d show eth0 | grep -i '+ searchterm);
-		let value = stdout.split(':')[1].trim();
-		if(setting == 'ip4')
-		{
-			value = value.split('/')[0];
-		}
+		// const { stdout, stderr } = await exec1('nmcli d show eth0 | grep -i '+ searchterm);
+		// let value = stdout.split(':')[1].trim();
+		// if(setting == 'ip4')
+		// {
+		// 	value = value.split('/')[0];
+		// }
 		 
-			this.setVariableValues({[setting]:value});
+		// this.setVariableValues({[setting]:value});
 		
 		
 
 
 	}
+
+	// setVariableValues(variables) {
+	// 	super.setVariableValues(variables)
+	// 	// this.checkFeedbacks('scenePreview') // Ensure feedbacks are checked after setting variable values
+	// }
 	
 }
 runEntrypoint(CRE8Instance, UpgradeScripts)

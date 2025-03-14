@@ -207,34 +207,39 @@ export function getActions() {
 			}
 		},
 	}
+
 	actions['preview_scene'] = {
 		name: 'Set Preview Scene',
 		options: [
-			{
-				type: 'dropdown',
-				label: 'Scene',
-				id: 'scene',
-				default: this.sceneListDefault,
-				choices: this.sceneChoicesCustomScene,
-			},
+			// {
+			// 	type: 'dropdown',
+			// 	label: 'Scene',
+			// 	id: 'scene',
+			// 	default: this.sceneListDefault,
+			// 	choices: this.sceneChoicesCustomScene,
+			// },
 			{
 				type: 'textinput',
 				useVariables: true,
-				label: 'Custom Scene Name',
+                label: 'Which scene? (scene_<number>)',
 				id: 'customSceneName',
-				default: '',
-				isVisible: (options) => options.scene === 'customSceneName',
+                default: 'scene_',
+                // isVisible: (options) => options.scene === 'customSceneName',
 			},
 		],
 		callback: async (action) => {
-			if (action.options.scene === 'customSceneName') {
-				const scene = await this.parseVariablesInString(action.options.customSceneName)
-				this.sendRequest('SetCurrentPreviewScene', { sceneName: scene })
+            let sceneName;
+			sceneName = this.getVariableValue(action.options.customSceneName);
+            sceneName = sceneName ? sceneName.trim() : '';
+            this.log('debug', `Setting current preview scene to: "${sceneName}"`);
+            if (sceneName && sceneName !== 'None') {
+                this.sendRequest('SetCurrentPreviewScene', { sceneName });
 			} else {
-				this.sendRequest('SetCurrentPreviewScene', { sceneName: action.options.scene })
+                this.log('error', `Invalid scene name provided: "${sceneName}"`);
 			}
 		},
 	}
+
 	actions['smart_switcher'] = {
 		name: 'Smart Scene Switcher',
 		description: 'Previews selected scene or, if scene is already in preview, transitions the scene to program',
@@ -603,6 +608,7 @@ export function getActions() {
 		],
 		callback: (action) => {
 			let newVolume = this.sources[action.options.source].inputVolume + action.options.volume
+			this.log('newVolume', newVolume);
 			if (newVolume > 26) {
 				newVolume = 26
 			} else if (newVolume < -100) {
@@ -610,8 +616,10 @@ export function getActions() {
 			}
 
 			this.sendRequest('SetInputVolume', { inputName: action.options.source, inputVolumeDb: newVolume })
+			this.log('newVolume', newVolume);
 		},
 	}
+
 	actions['adjust_volume_percent'] = {
 		name: 'Adjust Source Volume (Percentage)',
 		description: 'Adjusts the volume of a source based on a percentage of the CRE8 volume slider',
@@ -1837,8 +1845,9 @@ export function getActions() {
 			},
 		],
 		callback: async (action) => {
-			console.log('the direction is ', action.options.select_direction  );
-			this.audioControlKnob(action.options.source_index, action.options.select_direction === "right" ? 1 : -1);
+			this.log('the direction is ', action.options.select_direction, action.options.source_index, action.options.select_direction.right?.value );
+			this.audioControlKnob(action.options.source_index, action.options.select_direction === "right" ? 10 : -10);
+
 		}
 	}
 
@@ -1861,8 +1870,26 @@ export function getActions() {
 		],
 		callback: async (action) => {
 			const sourceVarKeys = ['audio_control_type_1', 'audio_control_type_2', 'audio_control_type_3', 'audio_control_type_4'];
+			this.log('the source index is ', action.options.source_index);
 			this.updateAudioControlSourceType(sourceVarKeys[action.options.source_index]);
 		}
+	}
+
+	// action required for setting the custom scene name
+	actions['set_custom_scene_name'] = {
+		name: 'Set Custom Scene Name',
+		options: [
+			{
+				type: 'textinput',
+				label: 'Custom Scene Name',
+				id: 'custom_scene_name',
+			},
+		],
+		callback: async (action) => {
+			this.setVariableValues({
+				custom_scene_name: action.options.custom_scene_name,
+			})
+		},
 	}
  
 	return actions
